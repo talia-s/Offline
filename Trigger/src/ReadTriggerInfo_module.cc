@@ -186,6 +186,10 @@ namespace mu2e {
       }
     };
 
+
+    //Define an unordered map to track the counts of trigger streams
+    unordered_map<string, int> triggerStreamCounts; 
+
     explicit ReadTriggerInfo(fhicl::ParameterSet const& pset);
     virtual ~ReadTriggerInfo() { }
 
@@ -944,6 +948,7 @@ namespace mu2e {
   }
 
   //--------------------------------------------------------------------------------
+  
   void ReadTriggerInfo::analyze(const art::Event& event) {
 
     //get the number of POT
@@ -972,10 +977,22 @@ namespace mu2e {
 
     //fill the histogram with the trigger bits
     //    for (unsigned i=0; i<trigResults->size(); ++i){
+    bool hasNotPassedTrigger = true;
+
     for (unsigned int i=0; i< trigNavig.getTrigPaths().size(); ++i){
       //      if (trigResults->accept(i)){
-      std::string path   = trigNavig.getTrigPathName(i);
+      std::string path   = trigNavig.getTrigPathName(i); //incorporates the reconstruction algorithm
       if(trigNavig.accepted(path)){
+        triggerStreamCounts[path] ++;
+        metricMan->sendMetric(path, 1, "triggers", 2, MeticMode::Accumulate);
+
+        // Avoid double counting for total passed: has this event passed a trigger stream previously?
+        if(hasNotPassedTrigger){
+          triggerStreamCounts["totalAccepted"] ++;
+          metricMan->sendMetric("totalPassedTrigger", 1, "triggers", 2, MeticMode::Accumulate);
+          hasNotPassedTrigger = false;
+        }
+
         for (size_t j=0; j<_trigPaths.size(); ++j){
           if (_trigPaths[j] == path){
             _sumHist._hTrigBits->Fill(j);
@@ -1566,5 +1583,5 @@ namespace mu2e {
 
 
 }
-
+//test
 DEFINE_ART_MODULE(mu2e::ReadTriggerInfo)
