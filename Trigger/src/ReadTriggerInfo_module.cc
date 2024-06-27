@@ -3,7 +3,9 @@
 //
 // Original author G. Pezzullo
 //
-
+#include "artdaq/ArtModules/ArtdaqSharedMemoryServiceInterface.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "artdaq/DAQdata/Globals.hh"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Run.h"
@@ -288,6 +290,11 @@ namespace mu2e {
 
   ReadTriggerInfo::ReadTriggerInfo(fhicl::ParameterSet const& pset) :
     art::EDAnalyzer(pset),
+
+     ///////////fixme /////////////////////////////////
+     art::ServiceHandle<ArtdaqSharedMemoryServiceInterface> shm;
+   ////////////fixme //////////////////////////
+    
     _diagLevel     (pset.get<int>   ("diagLevel", 0)),
     _nMaxTrig      (pset.get<size_t>("nPathIDs", 200)),
     _nTrackTrig    (pset.get<size_t>("nTrackTriggers", 4)),
@@ -984,12 +991,12 @@ namespace mu2e {
       std::string path   = trigNavig.getTrigPathName(i); //incorporates the reconstruction algorithm
       if(trigNavig.accepted(path)){
         triggerStreamCounts[path] ++;
-        metricMan->sendMetric(path, 1, "triggers", 2, MeticMode::Accumulate);
+        metricMan->sendMetric(path, 1, "triggers", 2, MetricMode::Accumulate);
 
         // Avoid double counting for total passed: has this event passed a trigger stream previously?
         if(hasNotPassedTrigger){
           triggerStreamCounts["totalAccepted"] ++;
-          metricMan->sendMetric("totalPassedTrigger", 1, "triggers", 2, MeticMode::Accumulate);
+          metricMan->sendMetric("totalPassedTrigger", 1, "triggers", 2, MetricMode::Accumulate);
           hasNotPassedTrigger = false;
         }
 
@@ -1583,5 +1590,5 @@ namespace mu2e {
 
 
 }
-//test
+//test 1
 DEFINE_ART_MODULE(mu2e::ReadTriggerInfo)
