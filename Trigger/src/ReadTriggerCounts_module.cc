@@ -990,13 +990,13 @@ namespace mu2e {
       //      if (trigResults->accept(i)){
       std::string path   = trigNavig.getTrigPathName(i); //incorporates the reconstruction algorithm
       if(trigNavig.accepted(path)){
-        triggerStreamCounts[path] ++;
-        metricMan->sendMetric(path, 1, "triggers", 2, MetricMode::Accumulate);
+        triggerStreamCounts["TriggerCounts"+path] ++;
+        metricMan->sendMetric("TriggerCounts"+path, 1, "triggers", 2, MetricMode::Accumulate);
 
         // Avoid double counting for total passed: has this event passed a trigger stream previously?
         if(hasNotPassedTrigger){
-          triggerStreamCounts["totalAccepted"] ++;
-          metricMan->sendMetric("totalPassedTrigger", 1, "triggers", 2, MetricMode::Accumulate);
+          triggerStreamCounts["TriggerCountsTotalAccepted"] ++;
+          metricMan->sendMetric("TriggerCountsTotalPassedTrigger", 1, "triggers", 2, MetricMode::Accumulate);
           hasNotPassedTrigger = false;
         }
 
