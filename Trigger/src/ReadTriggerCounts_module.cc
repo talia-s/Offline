@@ -3,7 +3,9 @@
 //
 // Original author G. Pezzullo
 //
-
+#include "artdaq/ArtModules/ArtdaqSharedMemoryServiceInterface.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "artdaq/DAQdata/Globals.hh"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Run.h"
@@ -186,6 +188,10 @@ namespace mu2e {
       }
     };
 
+
+    //Define an unordered map to track the counts of trigger streams
+    unordered_map<string, int> triggerStreamCounts; 
+
     explicit ReadTriggerInfo(fhicl::ParameterSet const& pset);
     virtual ~ReadTriggerInfo() { }
 
@@ -284,6 +290,11 @@ namespace mu2e {
 
   ReadTriggerInfo::ReadTriggerInfo(fhicl::ParameterSet const& pset) :
     art::EDAnalyzer(pset),
+
+     ///////////fixme /////////////////////////////////
+     art::ServiceHandle<ArtdaqSharedMemoryServiceInterface> shm;
+   ////////////fixme //////////////////////////
+    
     _diagLevel     (pset.get<int>   ("diagLevel", 0)),
     _nMaxTrig      (pset.get<size_t>("nPathIDs", 200)),
     _nTrackTrig    (pset.get<size_t>("nTrackTriggers", 4)),
@@ -944,6 +955,7 @@ namespace mu2e {
   }
 
   //--------------------------------------------------------------------------------
+  
   void ReadTriggerInfo::analyze(const art::Event& event) {
 
     //get the number of POT
@@ -972,10 +984,22 @@ namespace mu2e {
 
     //fill the histogram with the trigger bits
     //    for (unsigned i=0; i<trigResults->size(); ++i){
+    bool hasNotPassedTrigger = true;
+
     for (unsigned int i=0; i< trigNavig.getTrigPaths().size(); ++i){
       //      if (trigResults->accept(i)){
-      std::string path   = trigNavig.getTrigPathName(i);
+      std::string path   = trigNavig.getTrigPathName(i); //incorporates the reconstruction algorithm
       if(trigNavig.accepted(path)){
+        triggerStreamCounts[path] ++;
+        metricMan->sendMetric(path, 1, "triggers", 2, MetricMode::Accumulate);
+
+        // Avoid double counting for total passed: has this event passed a trigger stream previously?
+        if(hasNotPassedTrigger){
+          triggerStreamCounts["totalAccepted"] ++;
+          metricMan->sendMetric("totalPassedTrigger", 1, "triggers", 2, MetricMode::Accumulate);
+          hasNotPassedTrigger = false;
+        }
+
         for (size_t j=0; j<_trigPaths.size(); ++j){
           if (_trigPaths[j] == path){
             _sumHist._hTrigBits->Fill(j);
@@ -1566,5 +1590,5 @@ namespace mu2e {
 
 
 }
-
+//test 1
 DEFINE_ART_MODULE(mu2e::ReadTriggerInfo)
